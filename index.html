@@ -169,13 +169,7 @@ body:not(.standalone) .sb-act-btn.standalone-only{display:none}
 .dp-link-rev{font-size:10px;color:var(--text2);font-family:'DM Mono',monospace;padding:2px 7px;background:var(--surface2);border:1px solid var(--bd);border-radius:4px;letter-spacing:.04em}
 .dp-link-open{width:28px;height:28px;border-radius:50%;background:var(--surface2);border:1px solid var(--bd);display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--text2);transition:all .15s}
 .dp-link-card:hover .dp-link-open{background:var(--text);color:#fff;border-color:var(--text)}
-.dp-exc{background:var(--surface2);border:1px solid var(--bd);border-radius:6px;overflow:hidden;margin-bottom:10px}
-.dp-exc-hdr{padding:5px 10px;background:var(--coral-bg);border-bottom:1px solid var(--coral-bd);font-size:10px;font-weight:500;color:var(--coral);letter-spacing:.04em;text-transform:uppercase;display:flex;align-items:center;gap:5px}
-.dp-exc-hdr::before{content:'';width:4px;height:4px;border-radius:50%;background:#D85A30;flex-shrink:0}
-.dp-exc-row{display:flex;gap:10px;padding:6px 10px;border-bottom:1px solid var(--bd);font-size:11px}
-.dp-exc-row:last-child{border-bottom:none}
-.dp-exc-cond{flex:1;color:var(--text2)}
-.dp-exc-action{flex:1;color:var(--text)}
+
 .dp-pend{background:var(--surface2);border:1px solid var(--amber-bd);border-radius:6px;overflow:hidden;margin-bottom:10px}
 .dp-pend-hdr{padding:5px 10px;background:var(--amber-bg);border-bottom:1px solid var(--amber-bd);font-size:10px;font-weight:500;color:var(--amber);letter-spacing:.04em;text-transform:uppercase}
 .dp-pend-row{padding:6px 10px;border-bottom:1px solid var(--bd);font-size:11px;color:var(--text2)}
@@ -649,9 +643,7 @@ function openDetail(it, sid){
       if(sp.prose) h+=`<div class="dp-prose">${mdBlock(sp.prose)}</div>`;
       if(sp.tables) sp.tables.forEach(t=>{ h+=tbl(t); });
     }
-    if(sp.review) h+=`<div class="dp-review"><span class="tag-undef" style="background:var(--blue-bg);color:var(--blue);border-color:var(--blue-bd)">검토 필요</span><span style="margin-left:6px">${mdInline(sp.review)}</span></div>`;
-    if(sp.exc){h+=`<div class="dp-exc"><div class="dp-exc-hdr">예외처리</div>${sp.exc.map(([c,a])=>`<div class="dp-exc-row"><div class="dp-exc-cond">${mdInline(c)}</div><div class="dp-exc-action">${a==='미정의'?'<span class="tag-undef">미정의</span>':mdInline(a)}</div></div>`).join('')}</div>`;}
-  }
+    if(sp.review) h+=`<div class="dp-review"><span class="tag-undef" style="background:var(--blue-bg);color:var(--blue);border-color:var(--blue-bd)">검토 필요</span><span style="margin-left:6px">${mdInline(sp.review)}</span></div>`;  }
   if((it.pending_items||[]).length>0){/* 정의 필요 섹션 숨김 */}
   h+=`</div>`;
   const dpEl=document.getElementById('dp');
@@ -864,24 +856,16 @@ function parseMD(md){
     if(rvM) obj.review=rvM[1].replace(/^\*\*|\*\*$/g,'').trim();
 
     // ### 기능 상세 블록 파싱 — raw markdown 그대로 저장
-    const detailM=chunk.match(/###\s*기능\s*상세\s*\n([\s\S]*?)(?=\n###\s*예외처리|\n#{1,2}\s|$)/);
+    const detailM=chunk.match(/###\s*기능\s*상세\s*\n([\s\S]*?)(?=\n#{1,2}\s|$)/);
     if(detailM&&detailM[1].trim()) obj.detailMd=detailM[1].trim();
     // 기능 상세 블록 없으면 섹션 본문 전체를 fallback으로 캡처
     if(!obj.detailMd){
       const bodyM=chunk.match(/^#{1,2}\s+[\d.]+[^\n]*\n([\s\S]*)$/);
       if(bodyM){
         let body=bodyM[1];
-        if(obj.exc) body=body.replace(/###\s*예외처리[\s\S]*$/,'');
         body=body.trim();
         if(body) obj.detailMd=body;
       }
-    }
-
-    // ### 예외처리 블록 파싱
-    const excM=chunk.match(/###\s*예외처리\s*\n([\s\S]*?)(?=\n###|\n#{1,4}\s|$)/);
-    if(excM){
-      const t=parseTblLines(excM[1].split('\n'));
-      if(t&&t.r.length) obj.exc=t.r.map(r=>[r[0]||'',r[1]||'']);
     }
 
     // @@ 외부 파일 참조 추출
