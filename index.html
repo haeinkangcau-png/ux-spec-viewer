@@ -772,7 +772,10 @@ function openChangelogPanel(){
   let h=`<div class="dp-hdr"><div style="flex:1;min-width:0"><span class="dp-badge" style="background:var(--coral-bg);color:var(--coral);border:1px solid var(--coral-bd)">변경</span><div class="dp-title">${verLabel}</div></div><div class="dp-hdr-right"><button class="dp-close" onclick="closeDetail()">×</button></div></div><div class="dp-body">`;
 
   if(!CHANGELOG_ENTRIES.length){
-    h+=`<div style="font-size:12px;color:var(--text3);font-style:italic">변경사항 파일 없음 (specs/ 폴더에 *변경사항*.md 파일을 추가하세요)</div>`;
+    h+=`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:3rem 1rem;color:var(--text3)">
+  <div style="font-size:22px;opacity:.25">📋</div>
+  <div style="font-size:13px">변경 내역 없음</div>
+</div>`;
   } else {
     const secNameMap={};
     if(D&&D.sections) D.sections.forEach(s=>{
