@@ -101,7 +101,6 @@ body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);co
 .tag-check{display:inline-block;font-size:9px;padding:1px 5px;border-radius:3px;background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-bd);font-weight:500}
 .dp-ref{padding:7px 10px;background:var(--purple-bg);border:1px solid var(--purple-bd);border-radius:6px;font-size:11px;color:var(--purple);margin-bottom:10px}
 .dp-undef{padding:7px 10px;background:var(--amber-bg);border:1px solid var(--amber-bd);border-radius:6px;font-size:11px;color:var(--amber);margin-bottom:10px;display:flex;align-items:center;gap:6px}
-.dp-review{padding:7px 10px;background:var(--blue-bg);border:1px solid var(--blue-bd);border-radius:6px;font-size:11px;color:var(--blue);margin-bottom:10px;display:flex;align-items:flex-start;gap:6px}
 .dp-prose{font-size:inherit;color:var(--text2);line-height:1.7;margin-bottom:8px}
 .dp-detail{margin-bottom:8px}
 .dp-para{font-size:inherit;color:var(--text2);line-height:1.7;margin:0 0 7px}.dp-para:last-child{margin-bottom:0}
@@ -643,7 +642,7 @@ function openDetail(it, sid){
       if(sp.prose) h+=`<div class="dp-prose">${mdBlock(sp.prose)}</div>`;
       if(sp.tables) sp.tables.forEach(t=>{ h+=tbl(t); });
     }
-    if(sp.review) h+=`<div class="dp-review"><span class="tag-undef" style="background:var(--blue-bg);color:var(--blue);border-color:var(--blue-bd)">검토 필요</span><span style="margin-left:6px">${mdInline(sp.review)}</span></div>`;  }
+  }
   if((it.pending_items||[]).length>0){/* 정의 필요 섹션 숨김 */}
   h+=`</div>`;
   const dpEl=document.getElementById('dp');
@@ -851,22 +850,9 @@ function parseMD(md){
       obj.undef=um?um[1].trim():'내용 확인 필요';
     }
 
-    // review: 백슬래시 이스케이프된 \[검토 필요\] 포함 대응
-    const rvM=chunk.match(/\\?\[검토 필요\\?\]\*{0,2}\s*(.+?)(?:\n|$)/);
-    if(rvM) obj.review=rvM[1].replace(/^\*\*|\*\*$/g,'').trim();
-
-    // ### 기능 상세 블록 파싱 — raw markdown 그대로 저장
-    const detailM=chunk.match(/###\s*기능\s*상세\s*\n([\s\S]*?)(?=\n#{1,2}\s|$)/);
-    if(detailM&&detailM[1].trim()) obj.detailMd=detailM[1].trim();
-    // 기능 상세 블록 없으면 섹션 본문 전체를 fallback으로 캡처
-    if(!obj.detailMd){
-      const bodyM=chunk.match(/^#{1,2}\s+[\d.]+[^\n]*\n([\s\S]*)$/);
-      if(bodyM){
-        let body=bodyM[1];
-        body=body.trim();
-        if(body) obj.detailMd=body;
-      }
-    }
+    // 섹션 본문 전체 캡처
+    const bodyM=chunk.match(/^#{1,2}\s+[\d.]+[^\n]*\n([\s\S]*)$/);
+    if(bodyM){const body=bodyM[1].trim();if(body) obj.detailMd=body;}
 
     // @@ 외부 파일 참조 추출
     const rawRefs=[...chunk.matchAll(/^@@(.+?)$/gm)].map(m=>m[1].trim());
