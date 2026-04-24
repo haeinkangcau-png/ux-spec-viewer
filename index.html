@@ -1332,7 +1332,7 @@ async function loadFromFolder(folder){
   dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag-over');});
   dz.addEventListener('dragleave',()=>dz.classList.remove('drag-over'));
   dz.addEventListener('drop',e=>{
-    e.preventDefault(); dz.classList.remove('drag-over');
+    e.preventDefault(); e.stopPropagation(); dz.classList.remove('drag-over');
     const files=[...e.dataTransfer.files].filter(f=>f.name.endsWith('.md'));
     if(files.length) processDroppedFiles(files);
   });
@@ -1358,6 +1358,7 @@ async function loadFromFolder(folder){
   document.addEventListener('dragover',e=>e.preventDefault());
   document.addEventListener('drop',e=>{
     e.preventDefault(); dragDepth=0; overlay.classList.remove('active');
+    if(!document.getElementById('startup').classList.contains('hidden')) return;
     const files=[...e.dataTransfer.files].filter(f=>f.name.endsWith('.md'));
     if(files.length) processDroppedFiles(files);
   });
