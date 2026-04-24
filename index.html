@@ -317,6 +317,8 @@ let CHANGED_SECTIONS={};
 let CHANGELOG_ENTRIES=[];
 let CHANGELOG_VERSION={from:'',to:''};
 const MIN_W=220, MAX_W=780;
+// URL에 ?specs=../specs 처럼 경로 지정 가능, 기본값 'specs'
+const SPECS_ROOT=(new URLSearchParams(location.search).get('specs')||'specs').replace(/\/$/,'');
 
 function setPanelWidth(w){
   panelW=Math.max(MIN_W,Math.min(MAX_W,w));
@@ -963,16 +965,15 @@ async function getLatestSpecFile(){
   const params=new URLSearchParams(location.search);
   if(params.get('spec')) return params.get('spec');
   try{
-    const r=await fetch('specs/',{cache:'no-store'});
+    const r=await fetch(SPECS_ROOT+'/',{cache:'no-store'});
     if(!r.ok) throw new Error();
     const html=await r.text();
     const matches=[...html.matchAll(/href="([^"?#]*\.md)"/gi)];
-    // 기능정의서 포함 + 변경사항 미포함 파일만 스펙으로 선택
     const files=matches.map(m=>decodeURIComponent(m[1].split('/').pop()))
       .filter(f=>f.endsWith('.md') && /기능정의서/.test(f) && !/변경사항/.test(f));
     if(files.length===0) throw new Error();
     files.sort();
-    return 'specs/'+files[files.length-1];
+    return SPECS_ROOT+'/'+files[files.length-1];
   }catch(e){return 'funcspec.md';}
 }
 function normalizeMD(md){
@@ -1133,7 +1134,7 @@ function exportTOC(){
 async function loadChangelogSpec(){
   // 기능정의서_*변경사항*.md 패턴 파일 로드
   try{
-    const r=await fetch('specs/',{cache:'no-store'});
+    const r=await fetch(SPECS_ROOT+'/',{cache:'no-store'});
     if(!r.ok) return;
     const html=await r.text();
     const rawLinks=[...html.matchAll(/href="([^"?#]+\.md)"/gi)].map(m=>m[1]);
@@ -1143,7 +1144,7 @@ async function loadChangelogSpec(){
     });
     if(!changeFiles.length) return;
     changeFiles.sort();
-    const latestFile='specs/'+changeFiles[changeFiles.length-1].split('/').pop();
+    const latestFile=SPECS_ROOT+'/'+changeFiles[changeFiles.length-1].split('/').pop();
     const cr=await fetch(latestFile,{cache:'no-store'});
     if(!cr.ok) return;
     parseChangelog(await cr.text());
