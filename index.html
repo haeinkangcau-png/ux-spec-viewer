@@ -1250,8 +1250,9 @@ async function processDroppedFiles(files){
   const readFile=f=>new Promise(res=>{const r=new FileReader();r.onload=ev=>res(ev.target.result);r.readAsText(f,'utf-8');});
   const changeFile=files.find(f=>/변경사항/.test(f.name));
   const specFile=files.find(f=>!/변경사항/.test(f.name));
-  if(specFile) await loadSpecFromText(await readFile(specFile), specFile.name);
+  // changelog 먼저 파싱해야 buildSectionsFromMD에서 CHANGED_SECTIONS 반영됨
   if(changeFile) parseChangelog(await readFile(changeFile));
+  if(specFile) await loadSpecFromText(await readFile(specFile), specFile.name);
   hideStartup();
   render();
   const ca=document.getElementById('ca');
