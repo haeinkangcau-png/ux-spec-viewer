@@ -207,6 +207,28 @@ body:not(.standalone) .sb-act-btn.standalone-only{display:none}
 .drop-hint{font-size:11px;color:var(--text3)}
 .drop-border{position:absolute;inset:16px;border:2px dashed var(--bd2);border-radius:12px;pointer-events:none}
 body.standalone #drop-overlay{display:none}
+/* startup screen */
+#startup{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;z-index:8000}
+#startup.hidden{display:none}
+body.standalone #startup{display:none}
+.su-title{font-size:11px;font-weight:600;letter-spacing:.15em;text-transform:uppercase;color:var(--text3);margin-bottom:2.5rem}
+.su-title span{color:var(--text);font-weight:700}
+.su-dropzone{width:520px;border:2px dashed var(--bd2);border-radius:12px;padding:3rem 2rem;display:flex;flex-direction:column;align-items:center;gap:10px;background:var(--surface);transition:border-color .15s,background .15s}
+.su-dropzone.drag-over{border-color:var(--purple-bd);background:var(--purple-bg)}
+.su-drop-icon{font-size:36px;opacity:.25;margin-bottom:4px}
+.su-drop-label{font-size:15px;font-weight:500;color:var(--text)}
+.su-drop-sub{font-size:11px;color:var(--text3);text-align:center;line-height:1.6}
+.su-file-btn{display:flex;align-items:center;gap:6px;padding:.45rem 1.1rem;border:1px solid var(--bd2);border-radius:6px;font-size:12px;color:var(--text2);cursor:pointer;background:var(--surface);transition:background .12s;margin-top:4px}
+.su-file-btn:hover{background:var(--surface2)}
+.su-sep{width:520px;display:flex;align-items:center;gap:12px;margin:1.5rem 0 .75rem}
+.su-sep-line{flex:1;height:1px;background:var(--bd)}
+.su-sep-txt{font-size:11px;color:var(--text3)}
+.su-url-row{display:flex;gap:8px;width:520px}
+.su-url-input{flex:1;padding:.5rem .75rem;border:1px solid var(--bd2);border-radius:6px;font-size:12px;background:var(--surface);color:var(--text);font-family:inherit;outline:none}
+.su-url-input:focus{border-color:var(--purple-bd)}
+.su-url-btn{padding:.5rem 1.1rem;background:var(--text);color:#fff;border:none;border-radius:6px;font-size:12px;cursor:pointer;font-family:inherit;transition:opacity .12s}
+.su-url-btn:hover{opacity:.8}
+.su-url-hint{font-size:10px;color:var(--text3);width:520px;margin-top:.5rem;line-height:1.7}
 </style>
 </head>
 <body>
@@ -215,6 +237,25 @@ body.standalone #drop-overlay{display:none}
   <div class="drop-icon">📄</div>
   <div class="drop-label">MD 파일을 여기에 놓으세요</div>
   <div class="drop-hint">기능정의서 또는 변경사항 파일을 드랍하면 자동으로 로드됩니다</div>
+</div>
+
+<div id="startup" class="hidden">
+  <div class="su-title">UX <span>SPEC VIEWER</span></div>
+  <div class="su-dropzone" id="su-dropzone">
+    <div class="su-drop-icon">🗒</div>
+    <div class="su-drop-label">기능정의서 MD 파일을 여기에 드롭하거나</div>
+    <label class="su-file-btn">
+      📁 파일 선택
+      <input type="file" accept=".md" multiple style="display:none" id="su-file-input">
+    </label>
+    <div class="su-drop-sub">로컬 파일이 브라우저 내에서 열리며 외부로 전송되지 않습니다.</div>
+  </div>
+  <div class="su-sep"><div class="su-sep-line"></div><div class="su-sep-txt">또는 URL로 불러오기</div><div class="su-sep-line"></div></div>
+  <div class="su-url-row">
+    <input class="su-url-input" id="su-url-input" type="text" placeholder="https://raw.githubusercontent.com/…/spec.md">
+    <button class="su-url-btn" onclick="loadFromURL()">불러오기</button>
+  </div>
+  <div class="su-url-hint">💡 GitHub Raw URL 예시:<br>https://raw.githubusercontent.com/user/repo/main/spec.md</div>
 </div>
 <div id="ref-tip"></div>
 <div class="layout">
@@ -1174,6 +1215,10 @@ async function loadSpec(){
 async function load(){
   try{const r=await fetch('data_dev.json');D=await r.json();}catch(e){D=INLINE_DATA;}
   await loadSpec();
+  if(!D.sections||!D.sections.length){
+    document.getElementById('startup').classList.remove('hidden');
+    return;
+  }
   render();
   const ca=document.getElementById('ca');
   ca.classList.add('panel-open');
@@ -1182,52 +1227,88 @@ async function load(){
 // @@LOAD_CALL
 load();
 
-// --- drag & drop ---
+// --- shared file loading helpers ---
+function showStartup(){document.getElementById('startup').classList.remove('hidden');}
+function hideStartup(){document.getElementById('startup').classList.add('hidden');}
+
+async function loadSpecFromText(rawText, filename){
+  const txt=normalizeMD(rawText);
+  STANDALONE_MD=rawText; STANDALONE_FILENAME=filename;
+  const meta=parseDocMeta(txt);
+  if(meta['버전']) D.version=meta['버전'];
+  if(meta['작성일']) D.updated_at=meta['작성일'];
+  if(meta['작성자']) D.author=meta['작성자'];
+  parseDistHistory(txt); parseLinkReg(txt);
+  for(const k in SD) delete SD[k];
+  Object.assign(SD,parseMD(txt));
+  const secs=buildSectionsFromMD(txt);
+  if(secs.length) D.sections=secs;
+  showSpecStatus(filename+' (로드됨)');
+}
+
+async function processDroppedFiles(files){
+  const readFile=f=>new Promise(res=>{const r=new FileReader();r.onload=ev=>res(ev.target.result);r.readAsText(f,'utf-8');});
+  const changeFile=files.find(f=>/변경사항/.test(f.name));
+  const specFile=files.find(f=>!/변경사항/.test(f.name));
+  if(specFile) await loadSpecFromText(await readFile(specFile), specFile.name);
+  if(changeFile) parseChangelog(await readFile(changeFile));
+  hideStartup();
+  render();
+  const ca=document.getElementById('ca');
+  ca.classList.add('panel-open'); setPanelWidth(780);
+}
+
+async function loadFromURL(){
+  const url=document.getElementById('su-url-input').value.trim();
+  if(!url) return;
+  try{
+    const r=await fetch(url);
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const text=await r.text();
+    const fname=url.split('/').pop()||'spec.md';
+    if(/변경사항/.test(fname)) parseChangelog(text);
+    else await loadSpecFromText(text, fname);
+    hideStartup();
+    render();
+    const ca=document.getElementById('ca');
+    ca.classList.add('panel-open'); setPanelWidth(780);
+  }catch(e){alert('불러오기 실패: '+e.message);}
+}
+
+// --- startup dropzone events ---
+(function(){
+  const dz=document.getElementById('su-dropzone');
+  dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag-over');});
+  dz.addEventListener('dragleave',()=>dz.classList.remove('drag-over'));
+  dz.addEventListener('drop',e=>{
+    e.preventDefault(); dz.classList.remove('drag-over');
+    const files=[...e.dataTransfer.files].filter(f=>f.name.endsWith('.md'));
+    if(files.length) processDroppedFiles(files);
+  });
+  document.getElementById('su-file-input').addEventListener('change',e=>{
+    const files=[...e.target.files].filter(f=>f.name.endsWith('.md'));
+    if(files.length) processDroppedFiles(files);
+  });
+  document.getElementById('su-url-input').addEventListener('keydown',e=>{if(e.key==='Enter') loadFromURL();});
+})();
+
+// --- drag & drop overlay (뷰어 사용 중) ---
 (function(){
   const overlay=document.getElementById('drop-overlay');
   let dragDepth=0;
   document.addEventListener('dragenter',e=>{
     if(!e.dataTransfer.types.includes('Files')) return;
-    dragDepth++;
-    overlay.classList.add('active');
+    if(!document.getElementById('startup').classList.contains('hidden')) return;
+    dragDepth++; overlay.classList.add('active');
   });
   document.addEventListener('dragleave',()=>{
-    dragDepth--;
-    if(dragDepth<=0){dragDepth=0;overlay.classList.remove('active');}
+    dragDepth--; if(dragDepth<=0){dragDepth=0;overlay.classList.remove('active');}
   });
   document.addEventListener('dragover',e=>e.preventDefault());
   document.addEventListener('drop',e=>{
-    e.preventDefault();
-    dragDepth=0;
-    overlay.classList.remove('active');
+    e.preventDefault(); dragDepth=0; overlay.classList.remove('active');
     const files=[...e.dataTransfer.files].filter(f=>f.name.endsWith('.md'));
-    if(!files.length) return;
-    // 변경사항 파일과 스펙 파일 분리
-    const changeFile=files.find(f=>/변경사항/.test(f.name));
-    const specFile=files.find(f=>/기능정의서/.test(f.name)&&!/변경사항/.test(f.name));
-    const readFile=f=>new Promise(res=>{const r=new FileReader();r.onload=ev=>res(ev.target.result);r.readAsText(f,'utf-8');});
-    (async()=>{
-      if(specFile){
-        const txt=normalizeMD(await readFile(specFile));
-        STANDALONE_MD=await readFile(specFile);
-        STANDALONE_FILENAME=specFile.name;
-        const meta=parseDocMeta(txt);
-        if(meta['버전']) D.version=meta['버전'];
-        if(meta['작성일']) D.updated_at=meta['작성일'];
-        if(meta['작성자']) D.author=meta['작성자'];
-        parseDistHistory(txt);parseLinkReg(txt);
-        for(const k in SD) delete SD[k];
-        Object.assign(SD,parseMD(txt));
-        const secs=buildSectionsFromMD(txt);
-        if(secs.length) D.sections=secs;
-        showSpecStatus(specFile.name+' (드랍 로드)');
-      }
-      if(changeFile){
-        const txt=await readFile(changeFile);
-        parseChangelog(txt);
-      }
-      render();
-    })();
+    if(files.length) processDroppedFiles(files);
   });
 })();
 
