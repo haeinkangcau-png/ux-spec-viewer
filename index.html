@@ -980,6 +980,7 @@ async function getLatestSpecFile(){
   }catch(e){return 'funcspec.md';}
 }
 function normalizeMD(md){
+  md=md.replace(/\r\n/g,'\n').replace(/\r/g,'\n');
   function nextSub(used){let n=1;while(used.has(n))n++;return n;}
   const lines=md.split('\n');
   const out=[];
