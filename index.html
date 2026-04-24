@@ -199,9 +199,23 @@ body:not(.standalone) .sb-act-btn.standalone-only{display:none}
 .chg-type-tag{font-size:9px;font-weight:600;padding:1px 5px;border-radius:3px;flex-shrink:0}
 .chg-type-mod{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-bd)}
 .chg-type-add{background:var(--green-bg);color:var(--green);border:1px solid var(--green-bd)}
+/* drag-drop overlay */
+#drop-overlay{position:fixed;inset:0;background:rgba(249,248,245,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;z-index:9999;pointer-events:none;opacity:0;transition:opacity .15s}
+#drop-overlay.active{opacity:1;pointer-events:all}
+.drop-icon{font-size:40px;opacity:.35}
+.drop-label{font-size:14px;font-weight:500;color:var(--text2)}
+.drop-hint{font-size:11px;color:var(--text3)}
+.drop-border{position:absolute;inset:16px;border:2px dashed var(--bd2);border-radius:12px;pointer-events:none}
+body.standalone #drop-overlay{display:none}
 </style>
 </head>
 <body>
+<div id="drop-overlay">
+  <div class="drop-border"></div>
+  <div class="drop-icon">📄</div>
+  <div class="drop-label">MD 파일을 여기에 놓으세요</div>
+  <div class="drop-hint">기능정의서 또는 변경사항 파일을 드랍하면 자동으로 로드됩니다</div>
+</div>
 <div id="ref-tip"></div>
 <div class="layout">
   <aside class="sidebar">
@@ -1167,6 +1181,55 @@ async function load(){
 }
 // @@LOAD_CALL
 load();
+
+// --- drag & drop ---
+(function(){
+  const overlay=document.getElementById('drop-overlay');
+  let dragDepth=0;
+  document.addEventListener('dragenter',e=>{
+    if(!e.dataTransfer.types.includes('Files')) return;
+    dragDepth++;
+    overlay.classList.add('active');
+  });
+  document.addEventListener('dragleave',()=>{
+    dragDepth--;
+    if(dragDepth<=0){dragDepth=0;overlay.classList.remove('active');}
+  });
+  document.addEventListener('dragover',e=>e.preventDefault());
+  document.addEventListener('drop',e=>{
+    e.preventDefault();
+    dragDepth=0;
+    overlay.classList.remove('active');
+    const files=[...e.dataTransfer.files].filter(f=>f.name.endsWith('.md'));
+    if(!files.length) return;
+    // 변경사항 파일과 스펙 파일 분리
+    const changeFile=files.find(f=>/변경사항/.test(f.name));
+    const specFile=files.find(f=>/기능정의서/.test(f.name)&&!/변경사항/.test(f.name));
+    const readFile=f=>new Promise(res=>{const r=new FileReader();r.onload=ev=>res(ev.target.result);r.readAsText(f,'utf-8');});
+    (async()=>{
+      if(specFile){
+        const txt=normalizeMD(await readFile(specFile));
+        STANDALONE_MD=await readFile(specFile);
+        STANDALONE_FILENAME=specFile.name;
+        const meta=parseDocMeta(txt);
+        if(meta['버전']) D.version=meta['버전'];
+        if(meta['작성일']) D.updated_at=meta['작성일'];
+        if(meta['작성자']) D.author=meta['작성자'];
+        parseDistHistory(txt);parseLinkReg(txt);
+        for(const k in SD) delete SD[k];
+        Object.assign(SD,parseMD(txt));
+        const secs=buildSectionsFromMD(txt);
+        if(secs.length) D.sections=secs;
+        showSpecStatus(specFile.name+' (드랍 로드)');
+      }
+      if(changeFile){
+        const txt=await readFile(changeFile);
+        parseChangelog(txt);
+      }
+      render();
+    })();
+  });
+})();
 
 let mdRawCache=null;
 async function openMdViewer(){
