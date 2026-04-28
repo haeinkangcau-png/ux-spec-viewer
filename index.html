@@ -32,12 +32,12 @@ body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);co
 .sb-sec:hover{background:var(--surface2);color:var(--text)}
 .sb-sec.hl{color:var(--coral);font-weight:500}
 .sb-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
-.d-ch{background:#D85A30}.d-g{background:#d0cec6}.d-log{background:#7F77DD}.d-empty{background:transparent;border:1px solid #d0cec6}
+.d-ch{background:#D85A30}.d-g{background:#d0cec6}.d-log{background:#7F77DD}.d-link{background:#4A7FD4}.d-empty{background:transparent;border:1px solid #d0cec6}
 .sb-sec-empty{opacity:.55}
 .sb-cl{display:flex;align-items:center;gap:7px;padding:.5rem 1.1rem;font-size:12px;color:var(--text2);cursor:pointer;transition:background .12s;border-top:1px solid var(--bd);margin-top:4px}
 .sb-cl:hover{background:var(--surface2)}
-.content-area{display:grid;grid-template-columns:1fr 0 0;transition:grid-template-columns .25s ease;overflow:hidden;height:100%}
-.content-area.panel-open{grid-template-columns:1fr 4px var(--panel-w,400px)}
+.content-area{display:grid;grid-template-columns:1fr 0 0;transition:grid-template-columns .25s ease;overflow-y:hidden;overflow-x:auto;height:100%}
+.content-area.panel-open{grid-template-columns:var(--list-w,600px) 4px var(--panel-w,780px)}
 .resizer{background:transparent;cursor:col-resize;position:relative;transition:background .15s;flex-shrink:0}
 .resizer::after{content:'';position:absolute;top:0;left:-4px;right:-4px;bottom:0}
 .resizer:hover,.resizer.dragging{background:var(--purple-bd)}
@@ -148,6 +148,7 @@ body:not(.standalone) .sb-act-btn.standalone-only{display:none}
 .dp-chg-banner{background:var(--coral-bg);border:1px solid var(--coral-bd);border-left:3px solid var(--coral);border-radius:0 6px 6px 0;padding:10px 12px;margin-bottom:12px}
 .dp-chg-banner-ttl{font-size:11px;font-weight:600;color:var(--coral);margin-bottom:3px;display:flex;align-items:center;gap:5px}
 .dp-chg-banner-body{font-size:11px;color:var(--text2);line-height:1.5}
+.dp-chg-banner-sep{border:none;border-top:1px solid var(--coral-bd);margin:8px 0}
 .dp-links{display:flex;flex-direction:column;gap:7px;margin-bottom:14px}
 .dp-link-card{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--surface);border:1px solid var(--bd);border-radius:10px;text-decoration:none;color:var(--text);transition:all .15s;min-width:0;position:relative;overflow:hidden}
 .dp-link-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;border-radius:10px 0 0 10px}
@@ -302,14 +303,16 @@ body.standalone #startup{display:none}
 </div>
 
 <script>
-let D=null, filter='all', activeId=null, panelW=780;
+// 페이지 초기 상태(렌더링 전) HTML을 즉시 캡처 — standalone export용 클린 템플릿
+const _PAGE_SOURCE_TEMPLATE=(()=>{try{return '<!DOCTYPE html>\n'+document.documentElement.outerHTML;}catch(e){return '';}})();
+let D=null, filter='all', activeId=null, panelW=780, listW=0;
 let LINK_REG={};
 let DIST_HISTORY=[];
 let STANDALONE_MD=null, STANDALONE_FILENAME='';
 let CHANGED_SECTIONS={};
 let CHANGELOG_ENTRIES=[];
 let CHANGELOG_VERSION={from:'',to:''};
-const MIN_W=220, MAX_W=780;
+const MIN_W=220, MAX_W=780, MIN_LIST_W=300;
 // URL에 ?specs=../specs 처럼 경로 지정 가능, 기본값 'specs'
 const SPECS_ROOT=(new URLSearchParams(location.search).get('specs')||'specs').replace(/\/$/,'');
 
@@ -318,19 +321,32 @@ function setPanelWidth(w){
   document.getElementById('ca').style.setProperty('--panel-w', panelW+'px');
 }
 
+function setListWidth(w){
+  listW=Math.max(MIN_LIST_W,w);
+  document.getElementById('ca').style.setProperty('--list-w',listW+'px');
+}
+
+function initListWidth(){
+  if(listW>0) return;
+  const ca=document.getElementById('ca');
+  listW=Math.max(MIN_LIST_W, ca.clientWidth-4-panelW);
+  ca.style.setProperty('--list-w',listW+'px');
+}
+
 (function initResizer(){
   const resizer=document.getElementById('resizer');
+  if(!resizer) return;
   let startX, startW;
   resizer.addEventListener('mousedown',e=>{
-    startX=e.clientX; startW=panelW;
+    startX=e.clientX; startW=listW||Math.max(MIN_LIST_W,document.getElementById('ca').clientWidth-4-panelW);
     resizer.classList.add('dragging');
     document.body.style.cursor='col-resize';
     document.body.style.userSelect='none';
     const ca=document.getElementById('ca');
     ca.style.transition='none';
     const onMove=e=>{
-      const dx=startX-e.clientX;
-      setPanelWidth(startW+dx);
+      const dx=e.clientX-startX;
+      setListWidth(startW+dx);
     };
     const onUp=()=>{
       resizer.classList.remove('dragging');
@@ -588,7 +604,7 @@ function openChangelogDetail(entry, cardEl){
   document.querySelectorAll('.item-row').forEach(r=>r.classList.remove('active'));
   document.querySelectorAll('.chg-entry').forEach(c=>c.classList.remove('active'));
   if(cardEl) cardEl.classList.add('active');
-  document.getElementById('ca').classList.add('panel-open');
+  document.getElementById('ca').classList.add('panel-open'); initListWidth();
 
   const secBadges=entry.sections.map(s=>`<span class="chg-sec-badge${s.type==='added'?' is-added':''}" style="cursor:pointer" onclick="scrollToSection('${s.ord}')">${s.ord}${s.ann?' ('+s.ann+')':''}</span>`).join(' ');
   let h=`<div class="dp-hdr"><div style="flex:1;min-width:0"><button class="dp-fs-btn" style="margin-right:6px" onclick="openChangelogPanel()">← 목록</button><span class="dp-badge" style="background:var(--coral-bg);color:var(--coral);border:1px solid var(--coral-bd)">변경</span><div class="dp-title">${entry.title}</div></div><div class="dp-hdr-right"><button class="dp-close" onclick="closeDetail()">×</button></div></div><div class="dp-body">`;
@@ -615,21 +631,21 @@ function openDetail(it, sid){
   document.querySelectorAll('.item-row').forEach(r=>r.classList.remove('active'));
   const el=document.getElementById('ir-'+it.id);
   if(el) el.classList.add('active');
-  document.getElementById('ca').classList.add('panel-open');
+  document.getElementById('ca').classList.add('panel-open'); initListWidth();
 
   const sc=SC[sid]||SC["8"];
   const sp=SD[it.order]||null;
   let h=`<div class="dp-hdr"><div style="flex:1;min-width:0"><span class="dp-badge" style="background:${sc[0]};color:${sc[1]};border:1px solid ${sc[2]}">${it.order}</span><div class="dp-title">${it.name}</div></div><div class="dp-hdr-right"><div class="dp-fs-ctrl"><button class="dp-fs-btn" onclick="adjDpFs(-1)">A−</button><span class="dp-fs-val" id="dp-fs-val">${dpFs}</span><button class="dp-fs-btn" onclick="adjDpFs(1)">A+</button></div><button class="dp-close" onclick="closeDetail()">×</button></div></div><div class="dp-body">`;
 
   // 변경사항 배너
-  const chgEntry=CHANGELOG_ENTRIES.find(e=>e.sections.some(s=>it.order===s.ord||it.order.startsWith(s.ord+'.')));
-  if(chgEntry){
+  const chgEntries=CHANGELOG_ENTRIES.filter(e=>e.sections.some(s=>it.order===s.ord||it.order.startsWith(s.ord+'.')));
+  if(chgEntries.length>0){
     const verLabel=CHANGELOG_VERSION.to?`${CHANGELOG_VERSION.to} 변경사항`:'변경사항';
-    const bodyPreview=chgEntry.body.replace(/\[확인\s*필요\]/g,'').replace(/\n+/g,' ').trim();
-    h+=`<div class="dp-chg-banner">
-  <div class="dp-chg-banner-ttl">⚑ ${verLabel} — ${chgEntry.title}</div>
-  <div class="dp-chg-banner-body">${bodyPreview}</div>
-</div>`;
+    const inner=chgEntries.map(chgEntry=>{
+      const bodyPreview=chgEntry.body.replace(/\[확인\s*필요\]/g,'').replace(/\n+/g,' ').trim();
+      return `<div class="dp-chg-banner-ttl">⚑ ${verLabel} — ${chgEntry.title}</div><div class="dp-chg-banner-body">${bodyPreview}</div>`;
+    }).join('<hr class="dp-chg-banner-sep">');
+    h+=`<div class="dp-chg-banner">${inner}</div>`;
   }
 
   if(!sp){h+=`<div style="font-size:12px;color:var(--text3)">기능정의서 내용이 없습니다.</div>`;}
@@ -664,6 +680,11 @@ function render(){
   if(!D) return;
   const verStr=[D.version,D.updated_at].filter(Boolean).join(' · ');
   document.getElementById('sb-updated').textContent=verStr||'—';
+  if(D.project){
+    const nameEl=document.querySelector('.sb-name');
+    if(nameEl) nameEl.textContent=D.project;
+  }
+  document.title=[D.docname||D.project,D.version].filter(Boolean).join(' ');
   if(D.author) document.getElementById('sb-author').textContent=D.author;
   let total=0,changed=0;
   D.sections.forEach(s=>s.items.forEach(it=>{total++;if(it.recently_changed)changed++;}));
@@ -693,6 +714,14 @@ function render(){
   chgNav.innerHTML=`<span class="sb-dot d-ch"></span><span>변경 내역</span>${CHANGELOG_ENTRIES.length?`<span style="font-size:9px;color:var(--coral);margin-left:auto;padding-left:4px;flex-shrink:0">${CHANGELOG_ENTRIES.length}</span>`:''}`;
   chgNav.onclick=()=>openChangelogPanel();
   nav.appendChild(chgNav);
+  const linkCount=Object.keys(LINK_REG).length;
+  if(linkCount){
+    const linkNav=document.createElement('div');
+    linkNav.className='sb-cl';
+    linkNav.innerHTML=`<span class="sb-dot d-link"></span><span>참조 문서</span><span style="font-size:9px;color:#4A7FD4;margin-left:auto;padding-left:4px;flex-shrink:0">${linkCount}</span>`;
+    linkNav.onclick=()=>openLinkPanel();
+    nav.appendChild(linkNav);
+  }
 
   const content=document.getElementById('main-content');
   content.innerHTML='';
@@ -740,7 +769,7 @@ function render(){
 function openDistPanel(){
   activeId='__dist__';
   document.querySelectorAll('.item-row').forEach(r=>r.classList.remove('active'));
-  document.getElementById('ca').classList.add('panel-open');
+  document.getElementById('ca').classList.add('panel-open'); initListWidth();
   let h=`<div class="dp-hdr"><div style="flex:1;min-width:0"><span class="dp-badge" style="background:var(--surface2);color:var(--text2);border:1px solid var(--bd)">이력</span><div class="dp-title">배포이력</div></div><div class="dp-hdr-right"><button class="dp-close" onclick="closeDetail()">×</button></div></div><div class="dp-body">`;
   if(!DIST_HISTORY.length){
     h+=`<div style="font-size:12px;color:var(--text3);font-style:italic">배포이력 없음</div>`;
@@ -757,7 +786,7 @@ function openDistPanel(){
 function openChangelogPanel(){
   activeId='__changelog__';
   document.querySelectorAll('.item-row').forEach(r=>r.classList.remove('active'));
-  document.getElementById('ca').classList.add('panel-open');
+  document.getElementById('ca').classList.add('panel-open'); initListWidth();
 
   const verLabel=CHANGELOG_VERSION.to?`${CHANGELOG_VERSION.to} 변경사항`:'변경 내역';
   let h=`<div class="dp-hdr"><div style="flex:1;min-width:0"><span class="dp-badge" style="background:var(--coral-bg);color:var(--coral);border:1px solid var(--coral-bd)">변경</span><div class="dp-title">${verLabel}</div></div><div class="dp-hdr-right"><button class="dp-close" onclick="closeDetail()">×</button></div></div><div class="dp-body">`;
@@ -802,6 +831,27 @@ function openChangelogPanel(){
 </tr>`;
     }).join('');
     h+=`</tbody></table>${legend}`;
+  }
+  h+=`</div>`;
+  document.getElementById('dp').innerHTML=h;
+  document.getElementById('dp').style.setProperty('--dp-fs',dpFs+'px');
+}
+
+function openLinkPanel(){
+  activeId='__links__';
+  document.querySelectorAll('.item-row').forEach(r=>r.classList.remove('active'));
+  document.getElementById('ca').classList.add('panel-open'); initListWidth();
+  let h=`<div class="dp-hdr"><div style="flex:1;min-width:0"><span class="dp-badge" style="background:#e8f0ff;color:#4A7FD4;border:1px solid #bdd0ff">링크</span><div class="dp-title">참조 문서</div></div><div class="dp-hdr-right"><button class="dp-close" onclick="closeDetail()">×</button></div></div><div class="dp-body">`;
+  const entries=Object.entries(LINK_REG);
+  if(!entries.length){
+    h+=`<div style="font-size:12px;color:var(--text3);font-style:italic">참조 문서 없음</div>`;
+  } else {
+    h+=`<div class="dp-links">`;
+    entries.forEach(([name,{type,url,rev}])=>{
+      const tc=type&&type.toLowerCase().includes('figma')?'t-figma':type&&type.toLowerCase().includes('excel')?'t-excel':type&&type.toLowerCase().includes('loop')?'t-loop':'t-other';
+      h+=linkCardHTML(tc,type,name,url,rev);
+    });
+    h+=`</div>`;
   }
   h+=`</div>`;
   document.getElementById('dp').innerHTML=h;
@@ -1021,16 +1071,24 @@ function exportMD(){
 }
 async function exportStandalone(){
   if(!STANDALONE_MD){alert('MD 파일이 아직 로드되지 않았습니다. 잠시 후 다시 시도해주세요.');return;}
+  // 비ASCII 문자를 \uXXXX로 이스케이프 — 인코딩 오류 방지
+  const escUni=s=>JSON.stringify(s).replace(/[-￿]/g,c=>'\\u'+c.charCodeAt(0).toString(16).padStart(4,'0'));
+
   let srcHtml;
   try{
     const r=await fetch(location.href,{cache:'no-store'});
     if(!r.ok) throw new Error('HTTP '+r.status);
     srcHtml=await r.text();
-  }catch(e){alert('HTML 소스 로드 실패: '+e.message);return;}
+  }catch(e){
+    // file:// URL 등 fetch 불가 시 페이지 로드 시점 캡처 템플릿 사용
+    srcHtml=_PAGE_SOURCE_TEMPLATE;
+  }
+  // 핵심 마커가 누락된 경우 중단
+  if(!srcHtml||!srcHtml.includes('// @@LOADSPEC'+'_START')){alert('HTML 소스에서 필수 마커를 찾지 못했습니다. 서버 모드(▶ 뷰어 실행.bat)에서 실행해 주세요.');return;}
 
-  // MD를 JSON으로 안전하게 인코딩 (백틱·특수문자 모두 처리)
-  const mdJson=JSON.stringify(STANDALONE_MD);
-  const fnJson=JSON.stringify(STANDALONE_FILENAME);
+  // MD를 JSON으로 안전하게 인코딩 (비ASCII → \uXXXX, $ 이슈 방지)
+  const mdJson=escUni(STANDALONE_MD);
+  const fnJson=escUni(STANDALONE_FILENAME);
 
   // 1. STANDALONE_MD 초기값 교체 (함수로 전달 → $ 특수문자 이슈 방지)
   srcHtml=srcHtml.replace(
@@ -1041,33 +1099,47 @@ async function exportStandalone(){
   // 2. loadSpec을 standalone 버전으로 교체 (마커 사이를 교체, 함수로 전달)
   const standaloneLoadSpec=
 `async function loadSpec(){
-  const txt=normalizeMD(STANDALONE_MD);
-  const meta=parseDocMeta(txt);
-  if(meta['버전']) D.version=meta['버전'];
-  if(meta['작성일']) D.updated_at=meta['작성일'];
-  if(meta['작성자']) D.author=meta['작성자'];
-  parseDistHistory(txt);
-  parseLinkReg(txt);
-  for(const k in SD) delete SD[k];
-  const parsed=parseMD(txt);
-  Object.assign(SD,parsed);
-  const mdSections=buildSectionsFromMD(txt);
-  if(mdSections.length) D.sections=mdSections;
-  showSpecStatus(STANDALONE_FILENAME+' (standalone)');
+  if(!STANDALONE_MD){showSpecStatus('내장 데이터 없음');return;}
+  try{
+    const txt=normalizeMD(STANDALONE_MD);
+    const meta=parseDocMeta(txt);
+    if(meta['프로젝트명']) D.project=meta['프로젝트명'];
+    if(meta['문서명']) D.docname=meta['문서명'];
+    if(meta['버전']) D.version=meta['버전'];
+    if(meta['작성일']) D.updated_at=meta['작성일'];
+    if(meta['작성자']) D.author=meta['작성자'];
+    parseDistHistory(txt);
+    parseLinkReg(txt);
+    for(const k in SD) delete SD[k];
+    const parsed=parseMD(txt);
+    Object.assign(SD,parsed);
+    const mdSections=buildSectionsFromMD(txt);
+    if(mdSections.length) D.sections=mdSections;
+    document.getElementById('no-js-msg')?.remove();
+    showSpecStatus(STANDALONE_FILENAME+' (standalone)');
+  }catch(e){
+    console.error('Standalone loadSpec error:',e);
+    showSpecStatus('로드 오류 — 콘솔 확인');
+  }
 }`;
   srcHtml=srcHtml.replace(/\/\/ @@LOADSPEC_START[\s\S]*?\/\/ @@LOADSPEC_END/,()=>standaloneLoadSpec);
 
-  // 2b. CHANGED_SECTIONS + CHANGELOG_ENTRIES + CHANGELOG_VERSION 임베딩
-  srcHtml=srcHtml.replace("let CHANGED_SECTIONS={};",()=>`let CHANGED_SECTIONS=${JSON.stringify(CHANGED_SECTIONS)};`);
-  srcHtml=srcHtml.replace("let CHANGELOG_ENTRIES=[];",()=>`let CHANGELOG_ENTRIES=${JSON.stringify(CHANGELOG_ENTRIES)};`);
-  srcHtml=srcHtml.replace("let CHANGELOG_VERSION={from:'',to:''};",()=>`let CHANGELOG_VERSION=${JSON.stringify(CHANGELOG_VERSION)};`);
+  // 2b. CHANGED_SECTIONS + CHANGELOG_ENTRIES + CHANGELOG_VERSION 임베딩 (비ASCII 이스케이프)
+  srcHtml=srcHtml.replace("let CHANGED_SECTIONS={};",()=>`let CHANGED_SECTIONS=${escUni(CHANGED_SECTIONS)};`);
+  srcHtml=srcHtml.replace("let CHANGELOG_ENTRIES=[];",()=>`let CHANGELOG_ENTRIES=${escUni(CHANGELOG_ENTRIES)};`);
+  srcHtml=srcHtml.replace("let CHANGELOG_VERSION={from:'',to:''};",()=>`let CHANGELOG_VERSION=${escUni(CHANGELOG_VERSION)};`);
 
   // 3. standalone 클래스 주입 — 마커를 써서 정확한 위치에 삽입 (문자열 내 'load();' 오치환 방지)
   srcHtml=srcHtml.replace(/\/\/ @@LOAD_CALL\r?\nload\(\);/,'load();\ndocument.body.classList.add(\'standalone\');');
 
+  // 4. no-js-msg 주입 — standalone에서만 표시, JS 성공 시 loadSpec이 제거
+  const noJsMsg='<div id="no-js-msg" style="position:fixed;inset:0;background:#f9f8f5;display:flex;align-items:center;justify-content:center;z-index:9999;font-family:\'Noto Sans KR\',-apple-system,sans-serif"><div style="text-align:center;max-width:420px;padding:2rem"><div style="font-size:36px;margin-bottom:1.25rem">\uD83D\uDCC4</div><div style="font-size:16px;font-weight:500;color:#1a1a18;margin-bottom:.75rem">\uC774 \uD30C\uC77C\uC740 \uB2E4\uC6B4\uB85C\uB4DC \uD6C4 \uC5F4\uC5B4\uC57C \uD569\uB2C8\uB2E4</div><div style="font-size:13px;color:#5f5e5a;line-height:1.7;margin-bottom:1.5rem">SharePoint \uBBF8\uB9AC \uBCF4\uAE30\uB098 \uC6F9 \uBDF0\uC5B4\uC5D0\uC11C\uB294<br>JavaScript\uAC00 \uCC28\uB2E8\uB418\uC5B4 \uC815\uC0C1 \uD45C\uC2DC\uB418\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4.</div><div style="background:#fff;border:1px solid #e4e2da;border-radius:8px;padding:.875rem 1rem;font-size:12px;color:#5f5e5a;line-height:1.8;text-align:left">1. \uD30C\uC77C\uC744 PC\uC5D0 <strong>\uB2E4\uC6B4\uB85C\uB4DC</strong>\uD558\uC138\uC694<br>2. <strong>Chrome</strong> \uB610\uB294 <strong>Edge</strong> \uBE0C\uB77C\uC6B0\uC800\uB85C \uD30C\uC77C\uC744 \uC5F4\uC5B4\uC8FC\uC138\uC694</div></div></div>';
+  srcHtml=srcHtml.replace('<div class="layout">',noJsMsg+'<div class="layout">');
+
   // 4. 파일명 생성 후 다운로드 (경로 지정 다이얼로그 우선, 미지원 시 fallback)
-  const base=(STANDALONE_FILENAME||'spec').replace(/\.md$/i,'');
-  const outName=base+'_standalone.html';
+  const docBase=(D.docname||D.project||STANDALONE_FILENAME.replace(/\.md$/i,'')).replace(/[\\/:*?"<>|]/g,'');
+  const verSuffix=D.version?'_'+D.version.replace(/\s/g,''):'';
+  const outName=docBase+verSuffix+'_배포용.html';
   const blob=new Blob([srcHtml],{type:'text/html;charset=utf-8'});
   if(window.showSaveFilePicker){
     try{
@@ -1092,7 +1164,9 @@ async function exportStandalone(){
 function exportTOC(){
   if(!D||!D.sections||!D.sections.length) return;
   const today=new Date().toISOString().slice(0,10);
-  let md=`# innk Manager 기능 정의서 목차\n\n`;
+  const docBase=(D.docname||D.project||'spec').replace(/[\\/:*?"<>|]/g,'');
+  const verSuffix=D.version?'_'+D.version.replace(/\s/g,''):'';
+  let md=`# ${docBase} 목차\n\n`;
   md+=`> 버전: ${D.version||'—'} | 업데이트: ${D.updated_at||'—'} | 목차 생성: ${today}\n\n---\n\n`;
   for(const sec of D.sections){
     md+=`## ${sec.title}\n\n`;
@@ -1102,7 +1176,7 @@ function exportTOC(){
   const blob=new Blob([md],{type:'text/markdown;charset=utf-8'});
   const a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
-  a.download=`innk-Manager_목차_${today}.md`;
+  a.download=`${docBase}${verSuffix}_목차.md`;
   a.click();URL.revokeObjectURL(a.href);
 }
 async function loadChangelogSpec(){
@@ -1166,6 +1240,8 @@ async function loadSpec(){
     STANDALONE_FILENAME=specFile.split('/').pop();
     const txt=normalizeMD(rawTxt);
     const meta=parseDocMeta(txt);
+    if(meta['프로젝트명']) D.project=meta['프로젝트명'];
+    if(meta['문서명']) D.docname=meta['문서명'];
     if(meta['버전']) D.version=meta['버전'];
     if(meta['작성일']) D.updated_at=meta['작성일'];
     if(meta['작성자']) D.author=meta['작성자'];
@@ -1208,7 +1284,7 @@ async function load(){
   }
   render();
   const ca=document.getElementById('ca');
-  ca.classList.add('panel-open');
+  ca.classList.add('panel-open'); initListWidth();
   setPanelWidth(780);
 }
 // @@LOAD_CALL
@@ -1222,6 +1298,8 @@ async function loadSpecFromText(rawText, filename){
   const txt=normalizeMD(rawText);
   STANDALONE_MD=rawText; STANDALONE_FILENAME=filename;
   const meta=parseDocMeta(txt);
+  if(meta['프로젝트명']) D.project=meta['프로젝트명'];
+    if(meta['문서명']) D.docname=meta['문서명'];
   if(meta['버전']) D.version=meta['버전'];
   if(meta['작성일']) D.updated_at=meta['작성일'];
   if(meta['작성자']) D.author=meta['작성자'];
@@ -1244,7 +1322,7 @@ async function processDroppedFiles(files){
   hideStartup();
   render();
   const ca=document.getElementById('ca');
-  ca.classList.add('panel-open'); setPanelWidth(780);
+  ca.classList.add('panel-open'); setPanelWidth(780); initListWidth();
 }
 
 async function loadFromURL(url){
@@ -1260,7 +1338,7 @@ async function loadFromURL(url){
     hideStartup();
     render();
     const ca=document.getElementById('ca');
-    ca.classList.add('panel-open'); setPanelWidth(780);
+    ca.classList.add('panel-open'); setPanelWidth(780); initListWidth();
   }catch(e){alert('불러오기 실패: '+e.message);}
 }
 
@@ -1290,7 +1368,7 @@ async function loadFromFolder(folder){
     hideStartup();
     render();
     const ca=document.getElementById('ca');
-    ca.classList.add('panel-open'); setPanelWidth(780);
+    ca.classList.add('panel-open'); setPanelWidth(780); initListWidth();
   }catch(e){
     su.querySelector('.su-drop-label').textContent='기능정의서 MD 파일을 여기에 드롭하거나';
     alert('폴더 로드 실패: '+e.message);
