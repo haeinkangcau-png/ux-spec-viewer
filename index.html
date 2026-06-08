@@ -17,9 +17,9 @@
   --green:#0b6e3a;--green-bg:#E3F5EC;--green-bd:#5DC991;
   --coral:#c0392b;--coral-bg:#FDECEA;--coral-bd:#F1998E;
 }
-body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);color:var(--text);font-size:13px;line-height:1.5;overflow:hidden;height:100vh}
+body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.55;overflow:hidden;height:100vh}
 .layout{display:grid;grid-template-columns:190px 1fr;height:100vh}
-.sidebar{background:var(--surface);border-right:1px solid var(--bd);display:flex;flex-direction:column;overflow:hidden}
+.sidebar{background:var(--surface);border-right:1px solid var(--bd);display:flex;flex-direction:column;overflow:hidden;position:relative}
 .sb-top{padding:1.25rem 1.25rem 1rem;border-bottom:1px solid var(--bd);flex-shrink:0}
 .sb-name{font-size:13px;font-weight:500}
 .sb-updated{font-size:10px;color:var(--text3);margin-top:6px;font-family:'DM Mono',monospace}
@@ -28,6 +28,12 @@ body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);co
 .fchip:hover{border-color:var(--text2);color:var(--text)}
 .fchip.on{background:var(--text);color:#fff;border-color:var(--text)}
 .sb-nav{flex:1;overflow-y:auto;padding:.5rem 0}
+.sb-search{padding:.5rem .75rem;border-bottom:1px solid var(--bd);flex-shrink:0;position:relative}
+.sb-search-input{width:100%;padding:5px 26px 5px 9px;border:1px solid var(--bd2);border-radius:5px;font-size:12px;background:var(--surface);color:var(--text);font-family:inherit;outline:none;transition:border-color .15s;box-sizing:border-box}
+.sb-search-input:focus{border-color:var(--text3)}
+.sb-search-input::placeholder{color:var(--text3)}
+.sb-search-clear{position:absolute;right:12px;top:50%;transform:translateY(-50%);width:14px;height:14px;border:none;background:transparent;color:var(--text3);font-size:16px;line-height:1;text-align:center;cursor:pointer;display:none;padding:0}
+.sb-search-clear:hover{color:var(--text)}
 .sb-sec{display:flex;align-items:center;gap:7px;padding:.35rem 1.1rem;font-size:12px;color:var(--text2);cursor:pointer;transition:background .12s}
 .sb-sec:hover{background:var(--surface2);color:var(--text)}
 .sb-sec.hl{color:var(--coral);font-weight:500}
@@ -35,6 +41,8 @@ body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);co
 .d-ch{background:#D85A30}.d-g{background:#d0cec6}.d-log{background:#7F77DD}.d-link{background:#4A7FD4}.d-empty{background:transparent;border:1px solid #d0cec6}
 .sb-sec-empty{opacity:.55}
 .sb-cl{display:flex;align-items:center;gap:7px;padding:.5rem 1.1rem;font-size:12px;color:var(--text2);cursor:pointer;transition:background .12s;border-top:1px solid var(--bd);margin-top:4px}
+.sb-resize{position:absolute;top:0;right:0;width:4px;height:100%;cursor:col-resize;z-index:10}
+.sb-resize:hover,.sb-resize.dragging{background:var(--purple-bd)}
 .sb-cl:hover{background:var(--surface2)}
 .content-area{display:grid;grid-template-columns:1fr 0 0;transition:grid-template-columns .25s ease;overflow-y:hidden;overflow-x:auto;height:100%}
 .content-area.panel-open{grid-template-columns:var(--list-w,600px) 4px var(--panel-w,780px)}
@@ -58,11 +66,11 @@ body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);co
 .item-row.active .item-name-cell{background:#EEEDFE30}
 .item-main{display:grid;grid-template-columns:1fr auto auto;align-items:stretch}
 .item-name-cell{padding:10px 13px;transition:background .12s}
-.item-name{font-size:13px;font-weight:500;display:flex;align-items:center;gap:7px}
+.item-name{font-size:14px;font-weight:500;display:flex;align-items:center;gap:7px}
 .item-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
 .item-dot-ch{background:#D85A30}
 .item-dot-g{background:#d0cec6}
-.item-order{font-family:'DM Mono',monospace;font-size:12px;color:var(--text3);font-weight:400;flex-shrink:0;width:44px}
+.item-order{font-family:'DM Mono',monospace;font-size:13px;color:var(--text3);font-weight:400;flex-shrink:0;width:44px}
 .item-sub{font-size:11px;color:var(--text3);margin-top:2px;padding-left:57px}
 .item-id-cell{padding:8px 10px;display:flex;align-items:center;gap:5px}
 .item-id-badge{display:none}
@@ -81,7 +89,7 @@ body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);co
 .cl-lbl{font-size:12px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;padding-bottom:.4rem;border-bottom:1px solid var(--bd);margin-bottom:.6rem}
 .cl-table{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--bd);border-radius:7px;overflow:hidden}
 .cl-table th{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.04em;color:var(--text3);text-align:left;padding:7px 13px;background:var(--surface2);border-bottom:1px solid var(--bd)}
-.cl-table td{padding:8px 13px;border-bottom:1px solid var(--bd);font-size:12px;vertical-align:top}
+.cl-table td{padding:8px 13px;border-bottom:1px solid var(--bd);font-size:13px;vertical-align:top}
 .cl-table tr:last-child td{border-bottom:none}
 .cl-table tr:hover td{background:var(--surface2)}
 .cl-mono{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3)}
@@ -96,7 +104,7 @@ body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);co
 .dp-fs-btn:hover{background:var(--surface2);color:var(--text);border-color:var(--bd2)}
 .dp-fs-val{font-size:9px;color:var(--text3);width:20px;text-align:center;font-family:'DM Mono',monospace}
 .dp-badge{font-size:10px;font-weight:500;padding:2px 8px;border-radius:10px;flex-shrink:0;margin-top:3px;font-family:'DM Mono',monospace}
-.dp-title{font-size:13px;font-weight:500;color:var(--text);line-height:1.4;margin-top:3px}
+.dp-title{font-size:14px;font-weight:500;color:var(--text);line-height:1.4;margin-top:3px}
 .dp-body{padding:13px 15px;flex:1;overflow-y:auto;font-size:var(--dp-fs,12px)}
 .tag-check{display:inline-block;font-size:9px;padding:1px 5px;border-radius:3px;background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-bd);font-weight:500}
 .dp-ref{padding:7px 10px;background:var(--purple-bg);border:1px solid var(--purple-bd);border-radius:6px;font-size:11px;color:var(--purple);margin-bottom:10px}
@@ -113,8 +121,8 @@ body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);co
 .dp-hr{border:none;border-top:1px solid var(--bd);margin:8px 0}
 .dp-codeblock{background:var(--surface2);border:1px solid var(--bd);border-radius:6px;padding:9px 11px;font-family:'DM Mono',monospace;font-size:11px;color:var(--text);overflow-x:auto;margin-bottom:8px;white-space:pre}
 .dp-h1{font-size:16px;font-weight:600;color:var(--text);margin:20px 0 6px;padding-bottom:6px;border-bottom:2px solid var(--bd2)}
-.dp-h2{font-size:13px;font-weight:600;color:var(--text);margin:14px 0 4px;padding-bottom:3px;border-bottom:1px solid var(--bd)}
-.dp-h3{font-size:12px;font-weight:600;color:var(--text);margin:22px 0 6px;padding-top:14px;border-top:1px dashed var(--bd)}
+.dp-h2{font-size:14px;font-weight:600;color:var(--text);margin:14px 0 4px;padding-bottom:3px;border-bottom:1px solid var(--bd)}
+.dp-h3{font-size:13px;font-weight:600;color:var(--text);margin:22px 0 6px;padding-top:14px;border-top:1px dashed var(--bd)}
 .dp-h3:first-child{margin-top:4px;padding-top:0;border-top:none}
 .dp-h4{font-size:11px;font-weight:600;color:var(--text2);margin:14px 0 4px}
 .dp-h5,.dp-h6{font-size:11px;font-weight:500;color:var(--text3);margin:4px 0 2px}
@@ -129,11 +137,11 @@ body:not(.standalone) .sb-act-btn.standalone-only{display:none}
 .md-overlay.open{display:flex}
 .md-box{background:var(--surface);border:1px solid var(--bd);border-radius:10px;width:min(820px,92vw);max-height:86vh;display:flex;flex-direction:column;box-shadow:0 8px 32px rgba(0,0,0,.18)}
 .md-box-hdr{padding:12px 16px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:8px;flex-shrink:0}
-.md-box-title{font-size:13px;font-weight:500;flex:1}
+.md-box-title{font-size:14px;font-weight:500;flex:1}
 .md-box-close{background:none;border:none;cursor:pointer;color:var(--text3);font-size:18px;padding:0 4px;line-height:1;border-radius:3px}
 .md-box-close:hover{background:var(--surface2);color:var(--text)}
 .md-body{flex:1;overflow-y:auto;padding:1rem 1.25rem}
-.md-doc{font-size:12px;color:var(--text);line-height:1.7}
+.md-doc{font-size:13px;color:var(--text);line-height:1.7}
 .md-doc .dp-h1{font-size:18px;margin-top:28px}
 .md-doc .dp-h2{font-size:14px;margin-top:20px}
 .md-doc .dp-h1:first-child,.md-doc .dp-h2:first-child{margin-top:0}
@@ -144,7 +152,7 @@ body:not(.standalone) .sb-act-btn.standalone-only{display:none}
 .dp-tbl td{padding:6px 9px;border-bottom:1px solid var(--bd);color:var(--text);vertical-align:top;line-height:1.5}
 .dp-tbl tr:last-child td{border-bottom:none}
 .dp-tbl tr:hover td{background:var(--surface2)}
-.dp-intro{background:var(--surface2);border:1px solid var(--bd);border-left:3px solid var(--bd2);border-radius:0 6px 6px 0;padding:8px 12px;margin-bottom:12px;font-size:12px;color:var(--text2);line-height:1.6}
+.dp-intro{background:var(--surface2);border:1px solid var(--bd);border-left:3px solid var(--bd2);border-radius:0 6px 6px 0;padding:8px 12px;margin-bottom:12px;font-size:13px;color:var(--text2);line-height:1.6}
 .dp-chg-banner{background:var(--coral-bg);border:1px solid var(--coral-bd);border-left:3px solid var(--coral);border-radius:0 6px 6px 0;padding:10px 12px;margin-bottom:12px}
 .dp-chg-banner-ttl{font-size:11px;font-weight:600;color:var(--coral);margin-bottom:3px;display:flex;align-items:center;gap:5px}
 .dp-chg-banner-body{font-size:11px;color:var(--text2);line-height:1.5}
@@ -163,7 +171,7 @@ body:not(.standalone) .sb-act-btn.standalone-only{display:none}
 .dp-link-card.t-loop .dp-link-icon{background:var(--blue-bg);color:var(--blue)}
 .dp-link-card.t-other .dp-link-icon{background:var(--surface2);color:var(--text2)}
 .dp-link-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
-.dp-link-name{font-size:13px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dp-link-name{font-size:14px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dp-link-type{font-size:10px;font-weight:500;color:var(--text3);letter-spacing:.02em}
 .dp-link-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
 .dp-link-rev{font-size:10px;color:var(--text2);font-family:'DM Mono',monospace;padding:2px 7px;background:var(--surface2);border:1px solid var(--bd);border-radius:4px;letter-spacing:.04em}
@@ -185,7 +193,7 @@ body:not(.standalone) .sb-act-btn.standalone-only{display:none}
 .chg-entry.active{border-color:var(--coral);box-shadow:0 0 0 2px var(--coral-bg)}
 .chg-entry-hdr{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--bd)}
 .chg-entry-title{font-size:12px;font-weight:600;color:var(--text1);flex:1}
-.chg-entry-body{padding:10px 14px;font-size:12px;color:var(--text2);line-height:1.7;white-space:pre-wrap;word-break:break-word}
+.chg-entry-body{padding:10px 14px;font-size:13px;color:var(--text2);line-height:1.7;white-space:pre-wrap;word-break:break-word}
 .chg-entry-body strong,.chg-entry-body b{color:var(--text1);font-weight:600}
 .chg-entry-secs{display:flex;flex-wrap:wrap;gap:5px;padding:8px 14px;border-top:1px solid var(--bd);background:var(--surface2)}
 .chg-sec-badge{font-family:'DM Mono',monospace;font-size:10px;font-weight:500;background:var(--coral-bg);color:var(--coral);border:1px solid var(--coral-bd);border-radius:4px;padding:2px 7px;flex-shrink:0}
@@ -193,6 +201,28 @@ body:not(.standalone) .sb-act-btn.standalone-only{display:none}
 .chg-type-tag{font-size:9px;font-weight:600;padding:1px 5px;border-radius:3px;flex-shrink:0}
 .chg-type-mod{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-bd)}
 .chg-type-add{background:var(--green-bg);color:var(--green);border:1px solid var(--green-bd)}
+/* file role modal */
+#frm-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10000;align-items:center;justify-content:center}
+#frm-overlay.open{display:flex}
+.frm-box{background:var(--surface);border:1px solid var(--bd);border-radius:10px;width:min(480px,92vw);display:flex;flex-direction:column;box-shadow:0 8px 32px rgba(0,0,0,.18)}
+.frm-hdr{padding:12px 16px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:8px}
+.frm-title{font-size:14px;font-weight:500;flex:1;color:var(--text)}
+.frm-body{padding:16px;display:flex;flex-direction:column;gap:10px}
+.frm-desc{font-size:12px;color:var(--text3);margin-bottom:4px}
+.frm-file-card{border:1px solid var(--bd);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:8px;background:var(--surface2)}
+.frm-file-name{font-size:12px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.frm-role-btns{display:flex;gap:6px}
+.frm-role-btn{flex:1;padding:5px 0;border:1px solid var(--bd2);border-radius:5px;font-size:11px;font-weight:500;color:var(--text3);background:var(--surface);cursor:pointer;transition:all .12s}
+.frm-role-btn:hover{border-color:var(--bd);color:var(--text)}
+.frm-role-btn.selected-spec{border-color:var(--purple-bd,#a78bfa);background:var(--purple-bg,#f5f3ff);color:var(--purple,#7c3aed)}
+.frm-role-btn.selected-changelog{border-color:var(--amber-bd);background:var(--amber-bg);color:var(--amber)}
+.frm-footer{padding:12px 16px;border-top:1px solid var(--bd);display:flex;justify-content:flex-end;gap:8px}
+.frm-btn{padding:6px 18px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--bd2)}
+.frm-btn-cancel{background:var(--surface);color:var(--text2)}
+.frm-btn-cancel:hover{background:var(--surface2)}
+.frm-btn-confirm{background:var(--text);color:var(--bg);border-color:var(--text)}
+.frm-btn-confirm:hover{opacity:.85}
+.frm-btn-confirm:disabled{opacity:.4;cursor:not-allowed}
 /* drag-drop overlay */
 #drop-overlay{position:fixed;inset:0;background:rgba(249,248,245,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;z-index:9999;pointer-events:none;opacity:0;transition:opacity .15s}
 #drop-overlay.active{opacity:1;pointer-events:all}
@@ -230,14 +260,14 @@ body.standalone #startup{display:none}
   <div class="drop-border"></div>
   <div class="drop-icon">📄</div>
   <div class="drop-label">MD 파일을 여기에 놓으세요</div>
-  <div class="drop-hint">기능정의서 또는 변경사항 파일을 드랍하면 자동으로 로드됩니다</div>
+  <div class="drop-hint">정의서 또는 변경사항 파일을 드랍하면 자동으로 로드됩니다</div>
 </div>
 
 <div id="startup" class="hidden">
   <div class="su-title">UX <span>SPEC VIEWER</span></div>
   <div class="su-dropzone" id="su-dropzone">
     <div class="su-drop-icon">🗒</div>
-    <div class="su-drop-label">기능정의서 MD 파일을 여기에 드롭하거나</div>
+    <div class="su-drop-label">정의서 MD 파일을 여기에 드롭하거나</div>
     <label class="su-file-btn">
       📁 파일 선택
       <input type="file" accept=".md" multiple style="display:none" id="su-file-input">
@@ -253,7 +283,8 @@ body.standalone #startup{display:none}
 </div>
 <div id="ref-tip"></div>
 <div class="layout">
-  <aside class="sidebar">
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-resize" id="sb-resize"></div>
     <div class="sb-top">
       <div class="sb-name">innk Manager</div>
       <div class="sb-updated" id="sb-updated"></div>
@@ -263,6 +294,10 @@ body.standalone #startup{display:none}
       <button class="fchip on" onclick="setFilter('all',this)">전체</button>
       <button class="fchip" onclick="setFilter('changed',this)">변경됨</button>
       <button class="fchip" onclick="setFilter('pending',this)">확인 필요</button>
+    </div>
+    <div class="sb-search">
+      <input class="sb-search-input" id="sb-search" type="text" placeholder="항목 검색..." oninput="onSbSearch(this.value)">
+      <button class="sb-search-clear" id="sb-search-clear" onclick="clearSbSearch()">×</button>
     </div>
     <div class="sb-nav" id="sb-nav"></div>
     <div style="padding:.6rem 1rem;border-top:1px solid var(--bd);flex-shrink:0">
@@ -292,10 +327,40 @@ body.standalone #startup{display:none}
   </div>
 </div>
 
+<div id="frm-overlay">
+  <div class="frm-box">
+    <div class="frm-hdr">
+      <span class="frm-title">파일 역할 지정</span>
+      <button class="md-box-close" onclick="closeFileRoleModal()">×</button>
+    </div>
+    <div class="frm-body">
+      <div class="frm-desc">2개의 파일이 감지되었습니다. 각 파일의 역할을 지정해주세요.</div>
+      <div id="frm-file-0" class="frm-file-card">
+        <div class="frm-file-name" id="frm-name-0"></div>
+        <div class="frm-role-btns">
+          <button class="frm-role-btn" onclick="setFileRole(0,'spec')">기능정의서</button>
+          <button class="frm-role-btn" onclick="setFileRole(0,'changelog')">변경이력</button>
+        </div>
+      </div>
+      <div id="frm-file-1" class="frm-file-card">
+        <div class="frm-file-name" id="frm-name-1"></div>
+        <div class="frm-role-btns">
+          <button class="frm-role-btn" onclick="setFileRole(1,'spec')">기능정의서</button>
+          <button class="frm-role-btn" onclick="setFileRole(1,'changelog')">변경이력</button>
+        </div>
+      </div>
+    </div>
+    <div class="frm-footer">
+      <button class="frm-btn frm-btn-cancel" onclick="closeFileRoleModal()">취소</button>
+      <button class="frm-btn frm-btn-confirm" id="frm-confirm-btn" onclick="confirmFileRoles()" disabled>확인</button>
+    </div>
+  </div>
+</div>
+
 <div class="md-overlay" id="md-overlay" onclick="if(event.target===this)closeMdViewer()">
   <div class="md-box">
     <div class="md-box-hdr">
-      <div class="md-box-title">기능정의서 전체 보기</div>
+      <div class="md-box-title">정의서 전체 보기</div>
       <button class="md-box-close" onclick="closeMdViewer()">×</button>
     </div>
     <div class="md-body"><div class="md-doc" id="md-raw-content"><p style="color:var(--text3);font-size:12px">불러오는 중...</p></div></div>
@@ -353,6 +418,35 @@ function initListWidth(){
       document.body.style.cursor='';
       document.body.style.userSelect='';
       ca.style.transition='';
+      document.removeEventListener('mousemove',onMove);
+      document.removeEventListener('mouseup',onUp);
+    };
+    document.addEventListener('mousemove',onMove);
+    document.addEventListener('mouseup',onUp);
+    e.preventDefault();
+  });
+})();
+
+// Sidebar resize
+(function initSbResizer(){
+  const handle=document.getElementById('sb-resize');
+  const sidebar=document.getElementById('sidebar');
+  const layout=document.querySelector('.layout');
+  if(!handle||!sidebar) return;
+  let startX,startW;
+  handle.addEventListener('mousedown',e=>{
+    startX=e.clientX; startW=sidebar.offsetWidth;
+    handle.classList.add('dragging');
+    document.body.style.cursor='col-resize';
+    document.body.style.userSelect='none';
+    const onMove=ev=>{
+      const w=Math.max(140,Math.min(400,startW+(ev.clientX-startX)));
+      layout.style.gridTemplateColumns=w+'px 1fr';
+    };
+    const onUp=()=>{
+      handle.classList.remove('dragging');
+      document.body.style.cursor='';
+      document.body.style.userSelect='';
       document.removeEventListener('mousemove',onMove);
       document.removeEventListener('mouseup',onUp);
     };
@@ -581,8 +675,31 @@ function parseTblLines(lines){
   return h.some(Boolean)?{h,r}:null;
 }
 
+let sbSearchQuery='';
+function onSbSearch(q){
+  sbSearchQuery=q.trim().toLowerCase();
+  document.getElementById('sb-search-clear').style.display=q?'block':'none';
+  render();
+}
+function clearSbSearch(){
+  const inp=document.getElementById('sb-search');
+  inp.value='';sbSearchQuery='';
+  document.getElementById('sb-search-clear').style.display='none';
+  render();inp.focus();
+}
 function setFilter(f,btn){filter=f;document.querySelectorAll('.fchip').forEach(b=>b.classList.remove('on'));btn.classList.add('on');render();}
-function filterItem(it){if(filter==='changed')return it.recently_changed;if(filter==='pending')return(it.pending_items||[]).length>0;return true;}
+function filterItem(it){
+  if(filter==='changed'&&!it.recently_changed) return false;
+  if(filter==='pending'&&!(it.pending_items||[]).length) return false;
+  if(sbSearchQuery){
+    const nameMatch=it.name.toLowerCase().includes(sbSearchQuery);
+    const sp=SD[it.order];
+    const bodyMatch=sp&&(sp.detailMd||'').toLowerCase().includes(sbSearchQuery);
+    const introMatch=sp&&(sp.intro||'').toLowerCase().includes(sbSearchQuery);
+    if(!nameMatch&&!bodyMatch&&!introMatch) return false;
+  }
+  return true;
+}
 
 function tbl(t){
   const hdrs=t.h.map(h=>`<th>${mdInline(h)}</th>`).join('');
@@ -648,7 +765,7 @@ function openDetail(it, sid){
     h+=`<div class="dp-chg-banner">${inner}</div>`;
   }
 
-  if(!sp){h+=`<div style="font-size:12px;color:var(--text3)">기능정의서 내용이 없습니다.</div>`;}
+  if(!sp){h+=`<div style="font-size:12px;color:var(--text3)">정의서 내용이 없습니다.</div>`;}
   else{
     if(sp.intro) h+=`<div class="dp-intro">${mdBlock(sp.intro)}</div>`;
     if(sp.ref) h+=`<div class="dp-ref">→ ${sp.ref}</div>`;
@@ -697,7 +814,7 @@ function render(){
     const hc=s.items.some(it=>it.recently_changed);
     const pendCnt=s.items.reduce((a,it)=>a+(it.pending_items||[]).length,0);
     const vi=s.items.filter(it=>filterItem(it));
-    if(!vi.length&&filter!=='all') return;
+    if(!vi.length&&(filter!=='all'||sbSearchQuery)) return;
     const d=document.createElement('div');
     d.className=`sb-sec${hc?' hl':''}${!s.items.length?' sb-sec-empty':''}`;
     d.innerHTML=`<span class="sb-dot ${hc?'d-ch':s.items.length?'d-g':'d-empty'}"></span><span>${s.title}</span>`;
@@ -727,7 +844,7 @@ function render(){
   content.innerHTML='';
   D.sections.forEach(s=>{
     const vi=s.items.filter(it=>filterItem(it));
-    if(!vi.length&&filter!=='all') return;
+    if(!vi.length&&(filter!=='all'||sbSearchQuery)) return;
     const block=document.createElement('div');
     block.className='sec-block';
     block.id='sec-'+s.id;
@@ -993,7 +1110,7 @@ async function getLatestSpecFile(){
     const html=await r.text();
     const matches=[...html.matchAll(/href="([^"?#]*\.md)"/gi)];
     const files=matches.map(m=>decodeURIComponent(m[1].split('/').pop()))
-      .filter(f=>f.endsWith('.md') && /기능정의서/.test(f) && !/변경사항/.test(f));
+      .filter(f=>f.endsWith('.md') && /정의서/.test(f) && !/변경사항/.test(f));
     if(files.length===0) throw new Error();
     files.sort();
     return SPECS_ROOT+'/'+files[files.length-1];
@@ -1180,7 +1297,7 @@ function exportTOC(){
   a.click();URL.revokeObjectURL(a.href);
 }
 async function loadChangelogSpec(){
-  // 기능정의서_*변경사항*.md 패턴 파일 로드
+  // 정의서_*변경사항*.md 패턴 파일 로드
   try{
     const r=await fetch(SPECS_ROOT+'/',{cache:'no-store'});
     if(!r.ok) return;
@@ -1188,7 +1305,7 @@ async function loadChangelogSpec(){
     const rawLinks=[...html.matchAll(/href="([^"?#]+\.md)"/gi)].map(m=>m[1]);
     const changeFiles=rawLinks.filter(l=>{
       const name=decodeURIComponent(l);
-      return /기능정의서/.test(name) && /변경사항/.test(name);
+      return /정의서/.test(name) && /변경사항/.test(name);
     });
     if(!changeFiles.length) return;
     changeFiles.sort();
@@ -1311,18 +1428,61 @@ async function loadSpecFromText(rawText, filename){
   showSpecStatus(filename+' (로드됨)');
 }
 
-async function processDroppedFiles(files){
+let _pendingDropFiles=[];
+
+function showFileRoleModal(files){
+  _pendingDropFiles=files.map(f=>({file:f,role:null}));
+  document.getElementById('frm-name-0').textContent=files[0].name;
+  document.getElementById('frm-name-1').textContent=files[1].name;
+  _renderFileRoleModal();
+  document.getElementById('frm-overlay').classList.add('open');
+}
+function closeFileRoleModal(){
+  document.getElementById('frm-overlay').classList.remove('open');
+  _pendingDropFiles=[];
+}
+function _renderFileRoleModal(){
+  _pendingDropFiles.forEach((entry,i)=>{
+    const card=document.getElementById('frm-file-'+i);
+    const btns=card.querySelectorAll('.frm-role-btn');
+    btns[0].className='frm-role-btn'+(entry.role==='spec'?' selected-spec':'');
+    btns[1].className='frm-role-btn'+(entry.role==='changelog'?' selected-changelog':'');
+  });
+  const allAssigned=_pendingDropFiles.every(e=>e.role);
+  document.getElementById('frm-confirm-btn').disabled=!allAssigned;
+}
+function setFileRole(idx,role){
+  _pendingDropFiles[idx].role=role;
+  // 반대 파일에 나머지 역할 자동 지정
+  const otherIdx=idx===0?1:0;
+  _pendingDropFiles[otherIdx].role=role==='spec'?'changelog':'spec';
+  _renderFileRoleModal();
+}
+async function confirmFileRoles(){
   const readFile=f=>new Promise(res=>{const r=new FileReader();r.onload=ev=>res(ev.target.result);r.readAsText(f,'utf-8');});
-  const changeFile=files.find(f=>/변경사항/.test(f.name));
-  const specFile=files.find(f=>/기능정의서/.test(f.name)&&!/변경사항/.test(f.name));
-  // changelog 먼저 파싱해야 buildSectionsFromMD에서 CHANGED_SECTIONS 반영됨
-  if(changeFile) parseChangelog(await readFile(changeFile));
-  if(specFile) await loadSpecFromText(await readFile(specFile), specFile.name);
-  if(!specFile&&!changeFile){alert('기능정의서 MD 파일을 드랍해주세요.\n(파일명에 "기능정의서"가 포함되어야 합니다)');return;}
+  const specEntry=_pendingDropFiles.find(e=>e.role==='spec');
+  const changeEntry=_pendingDropFiles.find(e=>e.role==='changelog');
+  closeFileRoleModal();
+  if(changeEntry) parseChangelog(await readFile(changeEntry.file));
+  if(specEntry) await loadSpecFromText(await readFile(specEntry.file), specEntry.file.name);
   hideStartup();
   render();
   const ca=document.getElementById('ca');
   ca.classList.add('panel-open'); setPanelWidth(780); initListWidth();
+}
+
+async function processDroppedFiles(files){
+  const readFile=f=>new Promise(res=>{const r=new FileReader();r.onload=ev=>res(ev.target.result);r.readAsText(f,'utf-8');});
+  if(files.length===0) return;
+  if(files.length===1){
+    await loadSpecFromText(await readFile(files[0]), files[0].name);
+    hideStartup(); render();
+    const ca=document.getElementById('ca');
+    ca.classList.add('panel-open'); setPanelWidth(780); initListWidth();
+    return;
+  }
+  if(files.length===2){ showFileRoleModal(files); return; }
+  alert('파일을 1개 또는 2개만 드랍해주세요.');
 }
 
 async function loadFromURL(url){
@@ -1357,7 +1517,7 @@ async function loadFromFolder(folder){
     const mdFiles=files.filter(f=>f.name.endsWith('.md'));
     const changeEntry=mdFiles.find(f=>/변경사항/.test(f.name));
     const specEntry=mdFiles.find(f=>!/변경사항/.test(f.name));
-    if(!specEntry) throw new Error('기능정의서 MD 파일을 찾을 수 없습니다');
+    if(!specEntry) throw new Error('정의서 MD 파일을 찾을 수 없습니다');
     // changelog 먼저
     if(changeEntry){
       const cr=await fetch(changeEntry.download_url);
@@ -1370,7 +1530,7 @@ async function loadFromFolder(folder){
     const ca=document.getElementById('ca');
     ca.classList.add('panel-open'); setPanelWidth(780); initListWidth();
   }catch(e){
-    su.querySelector('.su-drop-label').textContent='기능정의서 MD 파일을 여기에 드롭하거나';
+    su.querySelector('.su-drop-label').textContent='정의서 MD 파일을 여기에 드롭하거나';
     alert('폴더 로드 실패: '+e.message);
   }
 }
