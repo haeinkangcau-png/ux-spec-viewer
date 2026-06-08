@@ -984,12 +984,12 @@ function parseMD(md){
   const parentIntros={};
   let pSec=null,pIntroLines=[];
   for(const line of mdLines){
-    const sm=line.match(/^#\s+(\d+)\./);
+    const sm=line.match(/^#{1,2}\s+(\d+)\./);
     if(sm){
       if(pSec&&pIntroLines.some(l=>l.trim())) parentIntros[pSec]=pIntroLines.join('\n').trim();
       pSec=sm[1];pIntroLines=[];continue;
     }
-    if(pSec&&/^##\s+\d+\./.test(line)){
+    if(pSec&&/^#{2,3}\s+\d+\.\d+\s+/.test(line)){
       if(pIntroLines.some(l=>l.trim())) parentIntros[pSec]=pIntroLines.join('\n').trim();
       pSec=null;pIntroLines=[];continue;
     }
@@ -997,9 +997,9 @@ function parseMD(md){
   }
   if(pSec&&pIntroLines.some(l=>l.trim())) parentIntros[pSec]=pIntroLines.join('\n').trim();
 
-  const chunks=md.split(/\n(?=#{1,2}\s+\d+\.)/);
+  const chunks=md.split(/\n(?=#{1,3}\s+\d+\.)/);
   chunks.forEach(chunk=>{
-    const m=chunk.match(/^#{1,2}\s+([\d]+\.[\d]+)\s+(.+?)(?:\s+\[.*?\])?(?:\n|$)/);
+    const m=chunk.match(/^#{1,3}\s+([\d]+\.[\d]+)\s+(.+?)(?:\s+\[.*?\])?(?:\n|$)/);
     if(!m) return;
     const order=m[1];
     const obj={};
@@ -1018,7 +1018,7 @@ function parseMD(md){
     }
 
     // 섹션 본문 전체 캡처
-    const bodyM=chunk.match(/^#{1,2}\s+[\d.]+[^\n]*\n([\s\S]*)$/);
+    const bodyM=chunk.match(/^#{1,3}\s+[\d.]+[^\n]*\n([\s\S]*)$/);
     if(bodyM){const body=bodyM[1].trim();if(body) obj.detailMd=body;}
 
     // @@ 외부 파일 참조 추출
@@ -1039,21 +1039,63 @@ function parseMD(md){
 
 function parseDocMeta(md){
   const meta={};
-  const firstSec=md.search(/^#\s+\d+\./m);
+  const firstSec=md.search(/^#{1,2}\s+\d+\./m);
   const header=firstSec>=0?md.slice(0,firstSec):md;
   for(const line of header.split('\n')){
     const m=line.match(/^>\s*(.+?):\s*(.+?)\s*$/);
     if(m) meta[m[1].trim()]=m[2].trim();
+  }
+
+  // Fallback: YAML frontmatter도 메타로 인식
+  if(Object.keys(meta).length===0){
+    const fm=md.match(/^---\n([\s\S]*?)\n---\s*(?:\n|$)/);
+    if(fm){
+      const keyMap={
+        projectName:'프로젝트명',
+        documentName:'문서명',
+        documentDate:'작성일',
+        lastUpdated:'작성일',
+        version:'버전',
+        author:'작성자',
+        owner:'작성자',
+        authors:'작성자'
+      };
+      const lines=fm[1].split('\n');
+      let listKey=null;
+      const setMeta=(rawKey,val)=>{
+        const k=keyMap[rawKey]||rawKey;
+        const v=(val||'').replace(/^['\"]|['\"]$/g,'').trim();
+        if(v&&!meta[k]) meta[k]=v;
+      };
+      for(const raw of lines){
+        const line=raw.trim();
+        if(!line) continue;
+        const listItem=line.match(/^-\s+(.+)$/);
+        if(listItem&&listKey){
+          setMeta(listKey,listItem[1]);
+          continue;
+        }
+        const kv=line.match(/^([A-Za-z_][\w-]*)\s*:\s*(.*)$/);
+        if(!kv){listKey=null;continue;}
+        const rk=kv[1],rv=kv[2].trim();
+        if(rv){
+          setMeta(rk,rv);
+          listKey=null;
+        }else{
+          listKey=rk;
+        }
+      }
+    }
   }
   return meta;
 }
 
 function parseDistHistory(md){
   DIST_HISTORY=[];
-  const start=md.search(/^#\s+00\.\s+/m);
+  const start=md.search(/^#{1,2}\s+00\.\s+/m);
   if(start<0) return;
   let body=md.slice(md.indexOf('\n',start)+1);
-  const next=body.search(/^#\s+\d+\./m);
+  const next=body.search(/^#{1,2}\s+\d+\./m);
   if(next>=0) body=body.slice(0,next);
   const t=parseTblLines(body.split('\n'));
   if(!t) return;
@@ -1072,10 +1114,10 @@ function parseDistHistory(md){
 
 function parseLinkReg(md){
   LINK_REG={};
-  const start=md.search(/^#\s+99\.\s+링크관리/m);
+  const start=md.search(/^#{1,2}\s+99\.\s+링크관리/m);
   if(start<0) return;
   let body=md.slice(md.indexOf('\n',start)+1);
-  const next=body.search(/^#\s+\d+\./m);
+  const next=body.search(/^#{1,2}\s+\d+\./m);
   if(next>=0) body=body.slice(0,next);
   const t=parseTblLines(body.split('\n'));
   if(!t) return;
@@ -1122,16 +1164,20 @@ function normalizeMD(md){
   const lines=md.split('\n');
   const out=[];
   let curSec=null;
+  let curSecLevel=0;
   const used={};
   for(const line of lines){
-    const h1=line.match(/^#\s+(\d+)\./);
+    const h1=line.match(/^(#{1,2})\s+(\d+)\./);
     if(h1){
-      curSec=h1[1];
+      curSec=h1[2];
+      curSecLevel=h1[1].length;
       if(!used[curSec]) used[curSec]=new Set();
       out.push(line);continue;
     }
-    if(curSec && curSec!=='00' && curSec!=='99' && /^##\s+/.test(line)){
-      const numM=line.match(/^(##\s+)(\d+)\.(\d+)(\s+[\s\S]*)?$/);
+    const itemPrefix=curSecLevel?('#'.repeat(Math.min(curSecLevel+1,6))+'\\s+'):'';
+    const itemHeadRe=itemPrefix?new RegExp('^'+itemPrefix):null;
+    if(curSec && curSec!=='00' && curSec!=='99' && itemHeadRe && itemHeadRe.test(line)){
+      const numM=line.match(new RegExp('^('+ '#'.repeat(Math.min(curSecLevel+1,6)) +'\\s+)(\\d+)\\.(\\d+)(\\s+[\\s\\S]*)?$'));
       if(numM){
         const sec=numM[2],sub=parseInt(numM[3]),rest=numM[4]||'';
         if(sec!==curSec||used[curSec].has(sub)){
@@ -1145,7 +1191,7 @@ function normalizeMD(md){
       }else{
         const n=nextSub(used[curSec]);
         used[curSec].add(n);
-        out.push(line.replace(/^##\s+/,`## ${curSec}.${n} `));
+        out.push(line.replace(itemHeadRe,`${'#'.repeat(Math.min(curSecLevel+1,6))} ${curSec}.${n} `));
       }
       continue;
     }
@@ -1158,15 +1204,19 @@ function buildSectionsFromMD(md){
   let cur=null;
   for(const raw of md.split('\n')){
     const l=raw.trim();
-    const secM=l.match(/^#\s+(\d+)\.\s+(.+)/);
+    const secM=l.match(/^(#{1,2})\s+(\d+)\.\s+(.+)/);
     if(secM){
-      cur={id:secM[1],title:`${secM[1]}. ${secM[2].trim()}`,loop_url:null,items:[]};
+      cur={id:secM[2],title:`${secM[2]}. ${secM[3].trim()}`,loop_url:null,items:[],level:secM[1].length};
       sections.push(cur);
       continue;
     }
-    const itM=l.match(/^##\s+(\d+\.\d+)\s+(.+?)(?:\s+\\?\[.*?\\?\])?$/);
-    if(itM&&cur&&itM[1].split('.')[0]===cur.id){
-      const order=itM[1];
+    const itemLevel=cur?Math.min(cur.level+1,6):2;
+    const itM=l.match(new RegExp('^#{'+itemLevel+'}\\s+(\\d+\\.\\d+)\\s+(.+?)(?:\\s+\\\\?\\[.*?\\\\?\\])?$'));
+    if(itM&&cur){
+      let order=itM[1];
+      if(order.split('.')[0]!==cur.id){
+        order=`${cur.id}.${order.split('.')[1]||'1'}`;
+      }
       const name=itM[2].replace(/\\\[|\\\]/g,'').trim();
       const idx=String(cur.items.length+1).padStart(3,'0');
       const parentOrd=order.split('.')[0];
@@ -1176,7 +1226,7 @@ function buildSectionsFromMD(md){
       cur.items.push({id:`SCR-${cur.id}-${idx}`,order,name,recently_changed:isChg,change_type:changeType,figma_url:null,excel_url:null,pending_items:pendItems});
     }
   }
-  return sections.filter(s=>s.id!=='99'&&s.id!=='00');
+  return sections.filter(s=>s.id!=='99'&&s.id!=='00').map(s=>({id:s.id,title:s.title,loop_url:s.loop_url,items:s.items}));
 }
 function exportMD(){
   if(!STANDALONE_MD) return;
